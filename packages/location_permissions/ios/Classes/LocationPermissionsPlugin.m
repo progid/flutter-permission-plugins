@@ -103,21 +103,14 @@
 
   PermissionStatus status = [LocationPermissionsPlugin getPermissionStatus:level];
   CLAuthorizationStatus authorizationStatus = [CLLocationManager authorizationStatus];
-  if (authorizationStatus == kCLAuthorizationStatusAuthorizedWhenInUse &&
-      level == PermissionLevelLocationAlways) {
-    // don't do anything and continue requesting permissions
-  } else if (status != PermissionStatusUnknown) {
+  if (status != PermissionStatusUnknown) {
     _result([[NSNumber alloc] initWithInt:status]);
     _result = nil;
     return;
   }
 
   if (level == PermissionLevelLocation) {
-    if ([[NSBundle mainBundle] objectForInfoDictionaryKey:@"NSLocationAlwaysUsageDescription"] !=
-        nil) {
-      _permissionLevel = PermissionLevelLocationAlways;
-      [_locationManager requestAlwaysAuthorization];
-    } else if ([[NSBundle mainBundle]
+    if ([[NSBundle mainBundle]
                    objectForInfoDictionaryKey:@"NSLocationWhenInUseUsageDescription"] != nil) {
       _permissionLevel = PermissionLevelLocationWhenInUse;
       [_locationManager requestWhenInUseAuthorization];
@@ -125,22 +118,8 @@
       _result([FlutterError
           errorWithCode:@"ERROR_MISSING_PROPERTYKEY"
                 message:@"To use location in iOS8 you need to define either "
-                        @"NSLocationWhenInUseUsageDescription or NSLocationAlwaysUsageDescription "
+                        @"NSLocationWhenInUseUsageDescription"
                         @"in the app bundle's Info.plist file"
-                details:nil]);
-      _result = nil;
-      return;
-    }
-  } else if (level == PermissionLevelLocationAlways) {
-    if ([[NSBundle mainBundle] objectForInfoDictionaryKey:@"NSLocationAlwaysUsageDescription"] !=
-        nil) {
-      _permissionLevel = PermissionLevelLocationAlways;
-      [_locationManager requestAlwaysAuthorization];
-    } else {
-      _result([FlutterError
-          errorWithCode:@"ERROR_MISSING_PROPERTYKEY"
-                message:@"To use location in iOS8 you need to define "
-                        @"NSLocationAlwaysUsageDescription in the app bundle's Info.plist file"
                 details:nil]);
       _result = nil;
       return;
@@ -185,20 +164,6 @@
 + (PermissionStatus)determinePermissionStatus:(PermissionLevel)permissionLevel
                           authorizationStatus:(CLAuthorizationStatus)authorizationStatus {
   if (@available(iOS 8.0, *)) {
-    if (permissionLevel == PermissionLevelLocationAlways) {
-      switch (authorizationStatus) {
-        case kCLAuthorizationStatusNotDetermined:
-          return PermissionStatusUnknown;
-        case kCLAuthorizationStatusRestricted:
-          return PermissionStatusRestricted;
-        case kCLAuthorizationStatusDenied:
-        case kCLAuthorizationStatusAuthorizedWhenInUse:
-          return PermissionStatusDenied;
-        case kCLAuthorizationStatusAuthorizedAlways:
-          return PermissionStatusGranted;
-      }
-    }
-
     switch (authorizationStatus) {
       case kCLAuthorizationStatusNotDetermined:
         return PermissionStatusUnknown;
@@ -206,7 +171,6 @@
         return PermissionStatusRestricted;
       case kCLAuthorizationStatusDenied:
         return PermissionStatusDenied;
-      case kCLAuthorizationStatusAuthorizedAlways:
       case kCLAuthorizationStatusAuthorizedWhenInUse:
         return PermissionStatusGranted;
     }
